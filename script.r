@@ -63,7 +63,7 @@ cn_2020 <- merge(cn_2020,
                  by.y = "country_name",
                  all = FALSE)
 
-unique(cn_2020$country)
+# unique(cn_2020$country)
 
 pop_dt <- fread("populism_dataset.csv",
                 encoding = "UTF-8")
@@ -74,5 +74,14 @@ pop_dt[16, "country"] <- "United States of America"
 
 pop_dt <- pop_dt[years_in_office %like% "-$"]
 
+populist_governments <- pop_dt$country
 
-#democratic_countries <- vdem_2019_dem$country_text_id
+vdem_2019_dem$populist <- NA
+
+for(i in 1:nrow(vdem_2019_dem)){ 
+  if(vdem_2019_dem[i, "country_name"] %in% populist_governments){
+  vdem_2019_dem[i, "populist"] <- 1
+  }else{
+  vdem_2019_dem[i, "populist"] <- 0
+  }
+}
