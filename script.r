@@ -80,8 +80,10 @@ vdem_2019_dem$populist <- NA
 
 for(i in 1:nrow(vdem_2019_dem)){ 
   if(vdem_2019_dem[i, "country_name"] %in% populist_governments){
-  vdem_2019_dem[i, "populist"] <- 1
+  vdem_2019_dem[i, "populist"] <- as.integer(1)
   }else{
-  vdem_2019_dem[i, "populist"] <- 0
+  vdem_2019_dem[i, "populist"] <- as.integer(0)
   }
 }
+
+vdem_2019_dem[populist == TRUE]
