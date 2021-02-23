@@ -20,6 +20,7 @@ if (Sys.info()["user"] == "Rodrigo") {
 #Importing and modifying the v-dem dataset#
 ###########################################
 
+
 vdem <- fread("V-Dem-CY-Full+Others-v10.csv",
               sep = ",",
               encoding = "UTF-8")
@@ -110,16 +111,77 @@ cn_2020_npopulist <- cn_2020[!(country %in% populist_governments)]
 
 covid_19_ts <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 
-covid_19_ts <- melt(covid_19_ts, id.vars = c("Province/State", "Country/Region", "Lat", "Long"), variable.name = "day", value.name ="n_infections")
+covid_19_ts_us <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+
+
+#Modifying covid_19_ts
+covid_19_ts <- melt(covid_19_ts, 
+                    id.vars = c("Province/State", 
+                                "Country/Region", 
+                                "Lat", 
+                                "Long"), 
+                    variable.name = "day", 
+                    value.name ="n_infections"
+                    )
 
 covid_19_ts <- covid_19_ts[, c("Lat", "Long") := NULL]
 
-colnames(covid_19_ts)[1:2] <- c("province_or_state", "country_or_region")
+colnames(covid_19_ts)[1:2] <- c("province_or_state", 
+                                "country_or_region")
 
 covid_19_ts[, n_infections := sum(n_infections), by = list(country_or_region, day)]
 
 covid_19_ts[, province_or_state := NULL]
 
-covid_19_ts <- unique(covid_19_ts, by = c("country_or_region", "day"))
+covid_19_ts <- unique(covid_19_ts, by = c("country_or_region", 
+                                          "day"))
 
-unique(cn$country)
+#modifying covid_19_ts_us
+covid_19_ts_us[, c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key") := NULL]
+
+covid_19_ts_us <- melt(covid_19_ts_us, id.vars = c("Province_State", 
+                                                   "Country_Region"), 
+                       variable.name = "day", 
+                       value.name = "n_infections")
+
+colnames(covid_19_ts_us)[1:2] <- c("province_or_state", 
+                                "country_or_region")
+
+covid_19_ts_us[, n_infections := sum(n_infections), by = list(country_or_region, 
+                                                              day)]
+
+covid_19_ts_us <- unique(covid_19_ts_us, by = c("country_or_region", 
+                                          "day"))
+
+covid_19_ts_us[, province_or_state := NULL]
+
+for(i in 1:nrow(covid_19_ts_us)){
+  covid_19_ts_us$country_or_region[i] <- "United States of America"
+}
+
+#Concatenating the global and us datasets and standardizing country names
+covid_19 <- rbind(covid_19_ts, covid_19_ts_us)
+
+for(i in 1:nrow(covid_19)){
+  if(covid_19[i, country_or_region] == "Cabo Verde"){
+    covid_19$country_or_region[i] <- "Cape Verde"
+  } else if(covid_19[i, country_or_region] == "Czechia"){
+    covid_19$country_or_region[i] <- "Czech Republic"
+  } else if(covid_19[i, country_or_region] == "Cote d'Ivoire"){
+    covid_19$country_or_region[i] <- "Ivory Coast"
+  } else if(covid_19[i, country_or_region] == "Korea, South"){
+    covid_19$country_or_region[i] <- "South Korea"
+  } else if(covid_19[i, country_or_region] == "Taiwan*"){
+    covid_19$country_or_region[i] <- "Taiwan"
+  } else if(covid_19[i, country_or_region] == "Gambia"){
+    covid_19$country_or_region[i] <- "The Gambia" 
+  }
+}
+
+covid_19 <- covid_19[country_or_region %in% democratic_countries]
+
+covid_19 <- setorder(covid_19, country_or_region)
+
+covid_19$day <- as.factor(covid_19$day)
+
+covid_19$day <- strptime(as.character(covid_19$day), "%m/%d/%y")
