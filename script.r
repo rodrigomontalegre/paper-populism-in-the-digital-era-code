@@ -1,14 +1,24 @@
-#Paper code
-#By Rodrigo Mont'Alegre
+############
+#Paper code#
+########################
+#By Rodrigo Mont'Alegre#
+########################
+
 
 library(data.table)
 library(ggplot2)
 library(writexl)
+library(curl)
+library(tidyr)
+
+
 if (Sys.info()["user"] == "Rodrigo") {
   setwd("C:/Users/Rodrigo/Desktop/TUM/Wintersemester 2021/POL60700 Modul Democracy in the digital age/Paper/data")
 }
 
-
+###########################################
+#Importing and modifying the v-dem dataset#
+###########################################
 
 vdem <- fread("V-Dem-CY-Full+Others-v10.csv",
               sep = ",",
@@ -40,31 +50,6 @@ vdem_2019_dem <- vdem_2019[vdem_2019$v2x_regime == 3 | vdem_2019$v2x_regime == 2
 
 vdem_2019_aut <- vdem_2019[vdem_2019$v2x_regime == 1 | vdem_2019$v2x_regime == 0] #all countries classified as a type of autocracy
 
-cn <- fread("coronanet_release.csv")
-
-cn_2020 <- cn[date_announced <= "2020-12-31" 
-              & date_start <= "2020-12-31" 
-              & init_country_level == "National"]
-
-
-for(i in 1:nrow(cn_2020)) {
-  if(cn_2020[i, country == "Czechia"]){
-    cn_2020$country[i] <- "Czech Republic"
-  }else if(cn_2020[i, country == "Gambia"]){
-    cn_2020$country[i] <- "The Gambia"
-  }else if(cn_2020[i, country == "Timor Leste"]){
-    cn_2020$country[i] <- "Timor-Leste"
-  }
-}
-
-cn_2020 <- merge(cn_2020,
-                 vdem_2019_dem,
-                 by.x = "country",
-                 by.y = "country_name",
-                 all = FALSE)
-
-# unique(cn_2020$country)
-
 pop_dt <- fread("populism_dataset.csv",
                 encoding = "UTF-8")
 
@@ -86,4 +71,55 @@ for(i in 1:nrow(vdem_2019_dem)){
   }
 }
 
-vdem_2019_dem[populist == TRUE]
+
+#################################################
+#Reading in and formatting the CoronaNet dataset#
+#################################################
+
+cn <- fread("coronanet_release.csv")
+
+cn_2020 <- cn[date_announced <= "2020-12-31" 
+              & date_start <= "2020-12-31" 
+              & init_country_level == "National"]
+
+for(i in 1:nrow(cn_2020)) {
+  if(cn_2020[i, country == "Czechia"]){
+    cn_2020$country[i] <- "Czech Republic"
+  }else if(cn_2020[i, country == "Gambia"]){
+    cn_2020$country[i] <- "The Gambia"
+  }else if(cn_2020[i, country == "Timor Leste"]){
+    cn_2020$country[i] <- "Timor-Leste"
+  }
+}
+
+unique(cn_2020$country)
+
+democratic_countries <- vdem_2019_dem$country_name
+
+cn_2020 <- cn_2020[country %in% democratic_countries] #only democratic countries as classified by the regimes of the world dataset
+
+#Now splitting the coronaNet data into populist and non-populist lead countries
+
+cn_2020_populist <- cn_2020[country %in% populist_governments]
+
+cn_2020_npopulist <- cn_2020[!(country %in% populist_governments)]
+
+##################################################
+#Importing and modfiying COVID-19 timeseries data#
+##################################################
+
+covid_19_ts <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+
+covid_19_ts <- melt(covid_19_ts, id.vars = c("Province/State", "Country/Region", "Lat", "Long"), variable.name = "day", value.name ="n_infections")
+
+covid_19_ts <- covid_19_ts[, c("Lat", "Long") := NULL]
+
+colnames(covid_19_ts)[1:2] <- c("province_or_state", "country_or_region")
+
+covid_19_ts[, n_infections := sum(n_infections), by = list(country_or_region, day)]
+
+covid_19_ts[, province_or_state := NULL]
+
+covid_19_ts <- unique(covid_19_ts, by = c("country_or_region", "day"))
+
+unique(cn$country)
