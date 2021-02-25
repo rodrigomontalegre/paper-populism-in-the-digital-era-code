@@ -182,6 +182,45 @@ covid_19 <- covid_19[country_or_region %in% democratic_countries]
 
 covid_19 <- setorder(covid_19, country_or_region)
 
-covid_19$day <- as.factor(covid_19$day)
+covid_19$day <- as.Date(as.character(covid_19$day), format = "%m/%d/%y")
 
-covid_19$day <- strptime(as.character(covid_19$day), "%m/%d/%y")
+covid_19 <- covid_19[day %between% c("2020/01/01", "2020/12/30")]
+
+#Calculating the daily number
+
+covid_19 <- covid_19[, daily := n_infections - shift(n_infections), by = country_or_region]
+
+
+#Adding population information
+
+population <- fread("WPP2019_TotalPopulationBySex.csv", encoding = "UTF-8")
+
+population <- population[Time == 2020 & Variant == "Medium", list(Location, Time, PopTotal, Variant)]
+
+population[, Variant := NULL]
+
+pop_kosovo <- data.table(Location = "Kosovo", Time = 2019, PopTotal = 1794.248)
+
+population <- rbind(population, pop_kosovo)
+
+for(i in 1:nrow(population)){
+  if(population[i, Location] == "Cabo Verde"){
+    population$Location[i] <- "Cape Verde"
+  } else if(population[i, Location] == "Côte d'Ivoire"){
+    population$Location[i] <- "Ivory Coast"
+  } else if(population[i, Location] == "Czechia"){
+    population$Location[i] <- "Czech Republic"
+  } else if(population[i, Location] == "Republic of Korea"){
+    population$Location[i] <- "South Korea"
+  } else if(population[i, Location] == "China, Taiwan Province of China"){
+    population$Location[i] <- "Taiwan"
+  } else if(population[i, Location] == "Gambia"){
+    population$Location[i] <- "The Gambia" 
+  }
+}
+
+population <- population[Time == 2020 & Location %in% democratic_countries, list(Location, Time, PopTotal)]
+
+pop_dem <- unique(population$Location)
+
+sort(pop_dem) == sort(democratic_countries)
