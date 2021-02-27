@@ -93,8 +93,6 @@ for(i in 1:nrow(cn_2020)) {
   }
 }
 
-unique(cn_2020$country)
-
 democratic_countries <- vdem_2019_dem$country_name
 
 cn_2020 <- cn_2020[country %in% democratic_countries] #only democratic countries as classified by the regimes of the world dataset
@@ -115,6 +113,7 @@ covid_19_ts_us <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-
 
 
 #Modifying covid_19_ts
+
 covid_19_ts <- melt(covid_19_ts, 
                     id.vars = c("Province/State", 
                                 "Country/Region", 
@@ -137,6 +136,7 @@ covid_19_ts <- unique(covid_19_ts, by = c("country_or_region",
                                           "day"))
 
 #modifying covid_19_ts_us
+
 covid_19_ts_us[, c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key") := NULL]
 
 covid_19_ts_us <- melt(covid_19_ts_us, id.vars = c("Province_State", 
@@ -159,7 +159,8 @@ for(i in 1:nrow(covid_19_ts_us)){
   covid_19_ts_us$country_or_region[i] <- "United States of America"
 }
 
-#Concatenating the global and us datasets and standardizing country names
+#Merging and calculating the daily number
+
 covid_19 <- rbind(covid_19_ts, covid_19_ts_us)
 
 for(i in 1:nrow(covid_19)){
@@ -190,7 +191,6 @@ covid_19 <- covid_19[day %between% c("2020/01/01", "2020/12/30")]
 
 covid_19 <- covid_19[, daily := n_infections - shift(n_infections), by = country_or_region]
 
-
 #Adding population information
 
 population <- fread("WPP2019_TotalPopulationBySex.csv", encoding = "UTF-8")
@@ -199,12 +199,16 @@ population <- population[Time == 2020 & Variant == "Medium", list(Location, Time
 
 population[, Variant := NULL]
 
-pop_kosovo <- data.table(Location = "Kosovo", Time = 2019, PopTotal = 1794.248)
+pop_kosovo <- data.table(Location = "Kosovo", Time = 2020, PopTotal = 1794.248) #Kosovo population data is from 2019 but assigned 2020 for script
 
 population <- rbind(population, pop_kosovo)
 
 for(i in 1:nrow(population)){
-  if(population[i, Location] == "Cabo Verde"){
+  if(population[i, Location] == "China, Taiwan Province of China"){
+    population$Location[i] <- "Taiwan"
+  } else if(population[i, Location] == "Gambia"){
+    population$Location[i] <- "The Gambia" 
+  } else if(population[i, Location] == "Cabo Verde"){
     population$Location[i] <- "Cape Verde"
   } else if(population[i, Location] == "Côte d'Ivoire"){
     population$Location[i] <- "Ivory Coast"
@@ -212,15 +216,53 @@ for(i in 1:nrow(population)){
     population$Location[i] <- "Czech Republic"
   } else if(population[i, Location] == "Republic of Korea"){
     population$Location[i] <- "South Korea"
-  } else if(population[i, Location] == "China, Taiwan Province of China"){
-    population$Location[i] <- "Taiwan"
-  } else if(population[i, Location] == "Gambia"){
-    population$Location[i] <- "The Gambia" 
+  } else if(population[i, Location] == "Republic of Moldova"){
+    population$Location[i] <- "Moldova"
   }
 }
-
+  
 population <- population[Time == 2020 & Location %in% democratic_countries, list(Location, Time, PopTotal)]
 
 pop_dem <- unique(population$Location)
 
 sort(pop_dem) == sort(democratic_countries)
+
+#Merging population and covid-19 datasets into dt and calculating per daily infections per 100,000 inhabitants
+
+dt <- merge(covid_19, population, by.x = "country_or_region", by.y = "Location")
+
+dt[, per_cap:= round(((daily / PopTotal * 1000) / 100), digits = 3)] #infections per 1000 people
+
+dt[, per_cap_weekly_avg := round(frollmean(per_cap, n = 7, fill = NA), digits = 3), by = country_or_region] #rolling weekly average of infections per 1000 people
+
+##############################################################
+#Standardizing and merging COVID-19 dataset and v-dem dataset#
+##############################################################
+
+unique(dt$country_or_region) %in% democratic_countries
+
+dt_2 <- merge(vdem_2019_dem, dt, by.x = "country_name", by.y = "country_or_region")
+
+dt_2[, c("country_text_id","histname", "year", "Time") := NULL]
+
+dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
+                    median_n_infections = median(n_infections, na.rm = TRUE),
+                    sd_n_infections = sd(n_infections, na.rm = TRUE),
+                    average_daily = mean(daily, na.rm = TRUE),
+                    median_daily = median(daily, na.rm = TRUE),
+                    sd_daily = sd(daily, na.rm = TRUE), 
+                    average_per_cap = mean(per_cap, na.rm = TRUE), 
+                    median_per_cap = median(per_cap, na.rm = TRUE), 
+                    average_weekly = mean(per_cap_weekly_avg, na.rm = TRUE)), 
+             by = populist] #summary statistics by populist and non-populist
+
+plot_1 <- ggplot(dt_2, aes(x = day, y = n_infections, color = populist)) + #Number of cases per country plot
+  geom_point(size = 0.7,
+             alpha = 0.7) +
+  labs(title = "Number of Infection per country in 2020",
+       x = "Day",
+       y = "Number of Cases") +
+  theme(panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 3),
+        panel.background = element_blank())
