@@ -5,8 +5,9 @@ This paper compares the response time of populist governments to the response ti
 
 ## Project Files
 
-- A script that installs all R packages necessary for the analysis.
-- A script used to analyze and visualize the data.
+- A script that installs all R packages necessary for the analysis
+- An R script used to analyze and visualize the data
+- A Python script used to analyze and visualize the data (forthcoming)
 
 ## Methods used
 
@@ -17,4 +18,12 @@ This paper compares the response time of populist governments to the response ti
 ## Technologies used
 
 - R
+-Python (forthcoming)
 
+##Datasets used
+
+- Varieties of Democracy by the V-Dem Institute
+- Populism in Power by the Tony Blair Institute for Global Change
+- COVID-19 Government Response Event Data Set by the CoronaNet Research Project
+- COVID-19 Data repository by JHU
+- Population data from the United Nations Department for Economic and Social Affairs
