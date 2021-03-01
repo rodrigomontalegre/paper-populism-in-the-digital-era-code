@@ -252,7 +252,7 @@ dt_2[, c("country_text_id",
          "year", 
          "Time") := NULL]
 
-dt_2[, total_cases_population := round((n_infections / (PopTotal * 1000) * 100), digits = 2)]
+dt_2[, pop_percent := round((n_infections / (PopTotal * 1000) * 100), digits = 2)]
 
 dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
                     median_n_infections = median(n_infections, na.rm = TRUE),
@@ -265,12 +265,24 @@ dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
                     average_weekly = mean(per_cap_weekly_avg, na.rm = TRUE)), 
              by = populist] #summary statistics by populist and non-populist
 
-plot_1 <- ggplot(dt_2, aes(x = day, y = n_infections / 1000, color = populist)) + #Number of cases per country plot
+dt_2[, c("daily_average_per_group", 
+         "daily_average_pop_percent") := list(round(mean(daily, 
+                                                         na.rm = TRUE), digits = 2), 
+                                              round(mean(pop_percent), digits = 2)), 
+        by = c("populist", "day")]
+
+
+
+#Plotting
+plot_1 <- ggplot(dt_2, aes(x = day, 
+                           y = daily_average_per_group, 
+                           color = populist)) + 
   geom_point(size = 0.7,
              alpha = 0.7) +
-  labs(title = "Number of Total Cases per country in 2020",
+  geom_smooth() +
+  labs(title = "Populists vs. Non-Populists (Daily Average)",
        x = "Day",
-       y = "Number of Cases") +
+       y = "Average Number of Cases") +
   theme(panel.border = element_rect(color = "black",
                                     fill = NA,
                                     size = 3),
@@ -279,10 +291,13 @@ plot_1 <- ggplot(dt_2, aes(x = day, y = n_infections / 1000, color = populist)) 
                      labels = c("Non-Populist", "Populist"), 
                      values = c("red", "blue"))
 
-plot_2 <- ggplot(dt_2, aes(x = day, y = total_cases_population, color = populist)) +
+plot_2 <- ggplot(dt_2, aes(x = day, 
+                           y = daily_pop_percent, 
+                           color = populist)) +
   geom_point(size = 0.7,
              alpha = 0.7) +
-  labs(title = "Percentage of Total Cases in Population ",
+  geom_smooth
+  labs(title = "Percentage of Total Cases in Population",
        x = "Day",
        y = "Cases versus Population in Percent") +
   theme(panel.border = element_rect(color = "black",
@@ -293,4 +308,4 @@ plot_2 <- ggplot(dt_2, aes(x = day, y = total_cases_population, color = populist
                      labels = c("Non-Populist", "Populist"), 
                      values = c("red", "blue"))
 
-dt_2[which.max(dt_2$total_cases_population)]
+
