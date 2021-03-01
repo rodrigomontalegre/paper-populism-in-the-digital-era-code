@@ -112,6 +112,8 @@ covid_19_ts <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/
 covid_19_ts_us <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 
 
+
+
 #Modifying covid_19_ts
 
 covid_19_ts <- melt(covid_19_ts, 
@@ -239,11 +241,18 @@ dt[, per_cap_weekly_avg := round(frollmean(per_cap, n = 7, fill = NA), digits = 
 #Standardizing and merging COVID-19 dataset and v-dem dataset#
 ##############################################################
 
-unique(dt$country_or_region) %in% democratic_countries
+dt_2 <- merge(vdem_2019_dem, 
+              dt, 
+              by.x = "country_name", 
+              by.y = "country_or_region"
+              )
 
-dt_2 <- merge(vdem_2019_dem, dt, by.x = "country_name", by.y = "country_or_region")
+dt_2[, c("country_text_id", 
+         "histname", 
+         "year", 
+         "Time") := NULL]
 
-dt_2[, c("country_text_id","histname", "year", "Time") := NULL]
+dt_2[, total_cases_population := round((n_infections / (PopTotal * 1000) * 100), digits = 2)]
 
 dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
                     median_n_infections = median(n_infections, na.rm = TRUE),
@@ -256,13 +265,32 @@ dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
                     average_weekly = mean(per_cap_weekly_avg, na.rm = TRUE)), 
              by = populist] #summary statistics by populist and non-populist
 
-plot_1 <- ggplot(dt_2, aes(x = day, y = n_infections, color = populist)) + #Number of cases per country plot
+plot_1 <- ggplot(dt_2, aes(x = day, y = n_infections / 1000, color = populist)) + #Number of cases per country plot
   geom_point(size = 0.7,
              alpha = 0.7) +
-  labs(title = "Number of Infection per country in 2020",
+  labs(title = "Number of Total Cases per country in 2020",
        x = "Day",
        y = "Number of Cases") +
   theme(panel.border = element_rect(color = "black",
                                     fill = NA,
                                     size = 3),
-        panel.background = element_blank())
+        panel.background = element_blank()) +
+  scale_color_manual(name = "Government Type",
+                     labels = c("Non-Populist", "Populist"), 
+                     values = c("red", "blue"))
+
+plot_2 <- ggplot(dt_2, aes(x = day, y = total_cases_population, color = populist)) +
+  geom_point(size = 0.7,
+             alpha = 0.7) +
+  labs(title = "Percentage of Total Cases in Population ",
+       x = "Day",
+       y = "Cases versus Population in Percent") +
+  theme(panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 3),
+        panel.background = element_blank()) +
+  scale_color_manual(name = "Government Type",
+                     labels = c("Non-Populist", "Populist"), 
+                     values = c("red", "blue"))
+
+dt_2[which.max(dt_2$total_cases_population)]
