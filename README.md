@@ -18,7 +18,7 @@ This paper compares the response time of populist governments to the response ti
 ## Technologies used
 
 - R
--Python (forthcoming)
+- Python (forthcoming)
 
 ##Datasets used
 
