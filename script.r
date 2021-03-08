@@ -111,9 +111,6 @@ covid_19_ts <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/
 
 covid_19_ts_us <- fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 
-
-
-
 #Modifying covid_19_ts
 
 covid_19_ts <- melt(covid_19_ts, 
@@ -266,14 +263,97 @@ dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
              by = populist] #summary statistics by populist and non-populist
 
 dt_2[, c("daily_average_per_group", 
-         "daily_average_pop_percent") := list(round(mean(daily, 
-                                                         na.rm = TRUE), digits = 2), 
+         "daily_average_pop_percent") := list(round(mean(daily, na.rm = TRUE), digits = 2), 
                                               round(mean(pop_percent), digits = 2)), 
         by = c("populist", "day")]
 
+#############################################################################################
+#Calculating time to implement policy in days compared to first case and 35 cases per 100000#
+#############################################################################################
 
+cn_2020_populist[, c("record_id", 
+                     "update_level", 
+                     "ISO_A3", 
+                     "ISO_A2", 
+                     "init_country_level", 
+                     "domestic_policy", 
+                     "province", "ISO_L2", 
+                     "city", 
+                     "institution_status", 
+                     "index_high_est", 
+                     "index_med_est", 
+                     "index_low_est", 
+                     "index_country_rank") := NULL]
 
-#Plotting
+keycol <- c("country", "date_start")
+
+setorderv(cn_2020_populist, keycol)
+
+dt_4 <- cn_2020_populist[, head(.SD, 1L), by = c("country", "type")]
+
+cn_2020_npopulist[, c("record_id", 
+                      "update_level", 
+                      "ISO_A3", 
+                      "ISO_A2", 
+                      "init_country_level", 
+                      "domestic_policy", 
+                      "province", 
+                      "ISO_L2", 
+                      "city", 
+                      "institution_status", 
+                      "index_high_est", 
+                      "index_med_est", 
+                      "index_low_est", 
+                      "index_country_rank") := NULL]
+
+setorderv(cn_2020_npopulist, keycol)
+
+dt_5 <- cn_2020_npopulist[, head(.SD, 1L), by = c("country", "type")]
+
+date_first_case <- dt_2[which(n_infections != 0)][, min(day), by = country_name]
+
+date_35per100k_case <- dt_2[which(per_cap > 0.35)][, min(day), by = country_name]
+
+colnames(date_first_case)[2] <- "first_case"
+
+colnames(date_35per100k_case)[2] <- "cases35per100k"
+
+dates_cases <- merge(date_first_case,
+                     date_35per100k_case,
+                     by = "country_name")
+
+dt_4 <- merge(dt_4, 
+              dates_cases,
+              by.x = "country",
+              by.y = "country_name")
+
+dt_4[, c("diff_1_policy_days", 
+         "diff_35per100k_policy_days") := (as.numeric(date_start) - as.numeric(first_case)), (as.numeric(date_start) - as.numeric(cases35per100k))] #second column something needs to be changed
+
+dt_5 <- merge(dt_5,
+              dates_cases,
+              by.x = "country",
+              by.y = "country_name")
+
+dt_5[, diff_1_policy_days := as.numeric(date_start) - as.numeric(first_case)]
+
+dt_6 <- dt_4[, list(average_diff_1_policy_days = mean(diff_1_policy_days),
+                    median_diff_1_policy_days = median(diff_1_policy_days),
+                    min = min(diff_1_policy_days),
+                    max = max(diff_1_policy_days)), by = type] #summary stats for populsits
+
+dt_6[order(type)]
+
+dt_7 <- dt_5[, list(average_diff_1_policy_days = mean(diff_1_policy_days),
+                    median_diff_1_policy_days = median(diff_1_policy_days),
+                    min = min(diff_1_policy_days),
+                    max = max(diff_1_policy_days)), by = type] #summary stats for non-populists
+dt_7[order(type)]
+
+################
+#Creating plots#
+################
+
 plot_1 <- ggplot(dt_2, aes(x = day, 
                            y = daily_average_per_group, 
                            color = populist)) + 
