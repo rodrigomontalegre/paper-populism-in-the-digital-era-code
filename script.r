@@ -10,7 +10,8 @@ library(ggplot2)
 library(writexl)
 library(curl)
 library(tidyr)
-
+library(stargazer)
+library(gt)
 
 if (Sys.info()["user"] == "Rodrigo") {
   setwd("C:/Users/Rodrigo/Desktop/TUM/Wintersemester 2021/POL60700 Modul Democracy in the digital age/Paper/data")
@@ -263,9 +264,13 @@ dt_3 <- dt_2[, list(average_n_infections = mean(n_infections, na.rm = TRUE),
              by = populist] #summary statistics by populist and non-populist
 
 dt_2[, c("daily_average_per_group", 
-         "daily_average_pop_percent") := list(round(mean(daily, na.rm = TRUE), digits = 2), 
-                                              round(mean(pop_percent), digits = 2)), 
+         "daily_average_pop_percent",
+         "daily_median_per_group") := list(round(mean(daily, na.rm = TRUE), digits = 2), 
+                                           round(mean(pop_percent, na.rm = TRUE), digits = 2),
+                                           round(median(daily, na.rm = TRUE), digits = 2)), 
         by = c("populist", "day")]
+
+dt_2[, n_average := round(mean(n_infections, na.rm = TRUE), digits = 2), by = c("populist", "day")]
 
 #############################################################################################
 #Calculating time to implement policy in days compared to first case and 35 cases per 100000#
@@ -341,29 +346,29 @@ dt_5[, diff_1_policy_days := round(as.numeric(date_start) - as.numeric(first_cas
 
 dt_5[, diff_35per100k_policy_days := round(as.numeric(date_start) - as.numeric(cases35per100k), 2)]
 
-dt_6 <- dt_4[, list(p_avg_fc_days = round(mean(diff_1_policy_days), 2),
-                    p_med_fc_days = round(median(diff_1_policy_days), 2),
-                    p_sd_fc_days = round(sd(diff_1_policy_days), 2),
-                    p_min_fc_days = min(diff_1_policy_days),
-                    p_max_fc_days = max(diff_1_policy_days),
-                    p_avg_35_days = round(mean(diff_35per100k_policy_days), 2),
-                    p_med_35_days = round(median(diff_35per100k_policy_days), 2),
-                    p_sd_35_days = round(sd(diff_35per100k_policy_days), 2),
-                    p_min_35_days = min(diff_35per100k_policy_days),
-                    p_max_35_days = max(diff_35per100k_policy_days)), by = type] #summary stats for populists
+dt_6 <- dt_4[, list(p_avg_fc = round(mean(diff_1_policy_days), 2),
+                    p_med_fc = round(median(diff_1_policy_days), 2),
+                    p_sd_fc = round(sd(diff_1_policy_days), 2),
+                    p_min_fc = min(diff_1_policy_days),
+                    p_max_fc = max(diff_1_policy_days),
+                    p_avg_35 = round(mean(diff_35per100k_policy_days), 2),
+                    p_med_35 = round(median(diff_35per100k_policy_days), 2),
+                    p_sd_35 = round(sd(diff_35per100k_policy_days), 2),
+                    p_min_35 = min(diff_35per100k_policy_days),
+                    p_max_35 = max(diff_35per100k_policy_days)), by = type] #summary stats for populists
 
 dt_6[order(type)]
 
-dt_7 <- dt_5[, list(np_avg_fc_days = round(mean(diff_1_policy_days), 2),
-                    np_med_fc_days = round(median(diff_1_policy_days), 2),
-                    np_sd_fc_days = round(sd(diff_1_policy_days), 2),
-                    np_min_fc_days = min(diff_1_policy_days),
-                    np_max_fc_days = max(diff_1_policy_days),
-                    np_avg_35_days = round(mean(diff_35per100k_policy_days), 2),
-                    np_med_35_days = round(median(diff_35per100k_policy_days), 2),
-                    np_sd_35_days = round(sd(diff_35per100k_policy_days), 2),
-                    np_min_35_days = min(diff_35per100k_policy_days),
-                    np_max_35_days = max(diff_35per100k_policy_days)), by = type] #summary stats for non-populists
+dt_7 <- dt_5[, list(np_avg_fc = round(mean(diff_1_policy_days), 2),
+                    np_med_fc = round(median(diff_1_policy_days), 2),
+                    np_sd_fc = round(sd(diff_1_policy_days), 2),
+                    np_min_fc = min(diff_1_policy_days),
+                    np_max_fc = max(diff_1_policy_days),
+                    np_avg_35 = round(mean(diff_35per100k_policy_days), 2),
+                    np_med_35 = round(median(diff_35per100k_policy_days), 2),
+                    np_sd_35 = round(sd(diff_35per100k_policy_days), 2),
+                    np_min_35 = min(diff_35per100k_policy_days),
+                    np_max_35 = max(diff_35per100k_policy_days)), by = type] #summary stats for non-populists
 dt_7[order(type)]
 
 dt_days <- merge(dt_6,
@@ -371,63 +376,150 @@ dt_days <- merge(dt_6,
                  by = "type")
 
 setcolorder(dt_days, c("type", 
-                       "p_avg_fc_days", 
-                       "np_avg_fc_days", 
-                       "p_med_fc_days", 
-                       "np_med_fc_days", 
-                       "p_sd_fc_days", 
-                       "np_sd_fc_days", 
-                       "p_min_fc_days", 
-                       "np_min_fc_days", 
-                       "p_max_fc_days", 
-                       "np_max_fc_days", 
-                       "p_avg_35_days", 
-                       "np_avg_35_days", 
-                       "p_med_35_days", 
-                       "np_med_35_days", 
-                       "p_sd_35_days", 
-                       "np_sd_35_days", 
-                       "p_min_35_days", 
-                       "np_min_35_days", 
-                       "p_max_35_days", 
-                       "np_max_35_days"))
+                       "p_avg_fc", 
+                       "np_avg_fc", 
+                       "p_med_fc", 
+                       "np_med_fc", 
+                       "p_sd_fc", 
+                       "np_sd_fc", 
+                       "p_min_fc", 
+                       "np_min_fc", 
+                       "p_max_fc", 
+                       "np_max_fc", 
+                       "p_avg_35", 
+                       "np_avg_35", 
+                       "p_med_35", 
+                       "np_med_35", 
+                       "p_sd_35", 
+                       "np_sd_35", 
+                       "p_min_35", 
+                       "np_min_35", 
+                       "p_max_35", 
+                       "np_max_35"))
+
+dt_days[, 6:11 := NULL][, 10:15 := NULL]
+
+dt_days[p_avg_fc > np_avg_fc]
+
+dt_days[p_med_fc < np_med_fc]
+
+dt_days[p_med_35 > np_med_35]
+
+dt_days[p_avg_35 < np_avg_35]
 
 ################
 #Creating plots#
 ################
 
-plot_1 <- ggplot(dt_2, aes(x = day, 
-                           y = daily_average_per_group, 
-                           color = populist)) + 
-  geom_point(size = 0.7,
-             alpha = 0.7) +
-  geom_smooth() +
-  labs(title = "Populists vs. Non-Populists (Daily Average)",
+plot_1 <- ggplot(dt_2, aes(x = day,
+                           y = daily_average_per_group,
+                           color = populist)) +
+  geom_line(size = 1, alpha = 1) +
+  labs(title = "Daily Average of Cases in 2020",
        x = "Day",
-       y = "Average Number of Cases") +
+       y = "Number of Cases") +
   theme(panel.border = element_rect(color = "black",
                                     fill = NA,
-                                    size = 3),
-        panel.background = element_blank()) +
+                                    size = 3), 
+        panel.background = element_rect(fill = "white", 
+                                        color = "grey", 
+                                        size = 1), 
+        panel.grid.major.y = element_line(size = 1, 
+                                          linetype = "dashed", 
+                                          color = "grey"),
+        panel.grid.major.x = element_line(),
+        legend.position = c(0.15, 0.85)) +
   scale_color_manual(name = "Government Type",
-                     labels = c("Non-Populist", "Populist"), 
+                     labels = c("Not populist", "Populist"), 
+                     values = c("red", "blue")) 
+
+
+plot_2 <- ggplot(dt_2, aes(x = day,
+                           y = daily_median_per_group,
+                           color = populist)) +
+  geom_line(size = 1, alpha = 1) +
+  theme(panel.border = element_rect(color = "black",
+                                    fill = NA,
+                                    size = 3), 
+        panel.background = element_rect(fill = "white", 
+                                        color = "grey", 
+                                        size = 1), 
+        panel.grid.major.y = element_line(size = 1, 
+                                          linetype = "dashed", 
+                                          color = "grey"),
+        panel.grid.major.x = element_line(),
+        legend.position = c(0.15, 0.85)) +
+  labs(title = "Daily Median of Cases in 2020",
+       x = "Day",
+       y = "Number of Cases") +
+  scale_color_manual(name = "Government Type",
+                     labels = c("Not populist", "Populist"), 
                      values = c("red", "blue"))
 
-plot_2 <- ggplot(dt_2, aes(x = day, 
-                           y = daily_pop_percent, 
+
+plot_3 <- ggplot(dt_2, aes(x = day, 
+                           y = daily_average_pop_percent, 
                            color = populist)) +
-  geom_point(size = 0.7,
-             alpha = 0.7) +
-  geom_smooth
+  geom_line(size = 1,
+             alpha = 1) +
   labs(title = "Percentage of Total Cases in Population",
        x = "Day",
        y = "Cases versus Population in Percent") +
   theme(panel.border = element_rect(color = "black",
                                     fill = NA,
-                                    size = 3),
-        panel.background = element_blank()) +
+                                    size = 3), 
+        panel.background = element_rect(fill = "white", 
+                                        color = "grey", 
+                                        size = 1), 
+        panel.grid.major.y = element_line(size = 1, 
+                                          linetype = "dashed", 
+                                          color = "grey"),
+        panel.grid.major.x = element_line(),
+        legend.position = c(0.15, 0.75)) +
   scale_color_manual(name = "Government Type",
-                     labels = c("Non-Populist", "Populist"), 
+                     labels = c("Not populist", "Populist"), 
                      values = c("red", "blue"))
 
+table_1 <- gt(dt_days) %>% tab_header(
+  title = "From Threshold to Implementation",
+  subtitle = "Number of days between first case, 35 per 100,000, and policy start")
+
+########################
+#Wilcoxon Rank Sum Test#
+########################
+
+#preparing the dataset
+
+dt_names <- unique(dt_2[, list(country_name, populist)])
+
+dt_testing <- rbind(dt_4, dt_5)
+
+dt_testing <- dt_testing[, list(country, 
+                                type, 
+                                date_start, 
+                                first_case, 
+                                cases35per100k, 
+                                diff_1_policy_days, 
+                                diff_35per100k_policy_days)]
+
+dt_testing <- merge(dt_testing,
+                    dt_names,
+                    by.x = "country",
+                    by.y = "country_name")
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "External Border Restrictions"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Lockdown"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Public Awareness Measures"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Quarantine"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Restrictions of Mass Gatherings"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Social Distancing"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Declaration of Emergency"])
+
+wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Restriction and Regulation of Businesses"])
 
