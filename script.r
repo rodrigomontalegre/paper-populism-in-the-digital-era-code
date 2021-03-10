@@ -327,27 +327,39 @@ dt_4 <- merge(dt_4,
               by.x = "country",
               by.y = "country_name")
 
-dt_4[, c("diff_1_policy_days", 
-         "diff_35per100k_policy_days") := (as.numeric(date_start) - as.numeric(first_case)), (as.numeric(date_start) - as.numeric(cases35per100k))] #second column something needs to be changed
+
+dt_4[, diff_1_policy_days := round(as.numeric(date_start) - as.numeric(first_case), 2)]
+
+dt_4[, diff_35per100k_policy_days := round(as.numeric(date_start) - as.numeric(cases35per100k), 2)]
 
 dt_5 <- merge(dt_5,
               dates_cases,
               by.x = "country",
               by.y = "country_name")
 
-dt_5[, diff_1_policy_days := as.numeric(date_start) - as.numeric(first_case)]
+dt_5[, diff_1_policy_days := round(as.numeric(date_start) - as.numeric(first_case), 2)]
 
-dt_6 <- dt_4[, list(average_diff_1_policy_days = mean(diff_1_policy_days),
-                    median_diff_1_policy_days = median(diff_1_policy_days),
-                    min = min(diff_1_policy_days),
-                    max = max(diff_1_policy_days)), by = type] #summary stats for populsits
+dt_5[, diff_35per100k_policy_days := round(as.numeric(date_start) - as.numeric(cases35per100k)]
+
+dt_6 <- dt_4[, list(p_avg_fc_policy_days = round(mean(diff_1_policy_days), 2),
+                    p_med_fc_policy_days = round(median(diff_1_policy_days), 2),
+                    p_min_fc_policy_days = min(diff_1_policy_days),
+                    p_max_fc_policy_days = max(diff_1_policy_days),
+                    p_avg_35_policy_days = round(mean(diff_35per100k_policy_days), 2),
+                    p_med_35_policy_days = round(median(diff_35per100k_policy_days), 2),
+                    p_min_35_policy_days = min(diff_35per100k_policy_days),
+                    p_max_35_policy_days = max(diff_35per100k_policy_days)), by = type] #summary stats for populsits
 
 dt_6[order(type)]
 
-dt_7 <- dt_5[, list(average_diff_1_policy_days = mean(diff_1_policy_days),
-                    median_diff_1_policy_days = median(diff_1_policy_days),
-                    min = min(diff_1_policy_days),
-                    max = max(diff_1_policy_days)), by = type] #summary stats for non-populists
+dt_7 <- dt_5[, list(np_avg_fc_policy_days = round(mean(diff_1_policy_days), 2),
+                    np_med_fc_policy_days = round(median(diff_1_policy_days), 2),
+                    np_min_fc_policy_days = min(diff_1_policy_days),
+                    np_max_fc_policy_days = max(diff_1_policy_days),
+                    np_avg_35_policy_days = round(mean(diff_35per100k_policy_days), 2),
+                    np_med_35_policy_days = round(median(diff_35per100k_policy_days), 2),
+                    np_min_35_policy_days = min(diff_35per100k_policy_days),
+                    np_max_35_policy_days = max(diff_35per100k_policy_days)), by = type] #summary stats for non-populists
 dt_7[order(type)]
 
 ################
