@@ -10,7 +10,6 @@ library(ggplot2)
 library(writexl)
 library(curl)
 library(tidyr)
-library(stargazer)
 library(gt)
 
 if (Sys.info()["user"] == "Rodrigo") {
@@ -505,21 +504,144 @@ dt_testing <- dt_testing[, list(country,
 dt_testing <- merge(dt_testing,
                     dt_names,
                     by.x = "country",
-                    by.y = "country_name")
+                    by.y = "country_name") #datatable with relevant information for wilcoxon test
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "External Border Restrictions"])
+dt_test_fc <- dt_days[, list(type, p_avg_fc, np_avg_fc)]
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Lockdown"])
+dt_test_fc$p_value <- NA
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Public Awareness Measures"])
+for(i in 1:nrow(dt_test_fc)){
+  if(dt_test_fc[i, type] == "Anti-Disinformation Measures"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                          data = dt_testing[type == "Anti-Disinformation Measures"])$p.value
+  }else if(dt_test_fc[i, type] == "Closure and Regulation of Schools"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                          data = dt_testing[type == "Closure and Regulation of Schools"])$p.value
+  }else if(dt_test_fc[i, type] == "Curfew"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Curfew"])$p.value
+  }else if(dt_test_fc[i, type] == "Declaration of Emergency"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Declaration of Emergency"])$p.value
+  }else if(dt_test_fc[i, type] == "External Border Restrictions"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "External Border Restrictions"])$p.value
+  }else if(dt_test_fc[i, type] == "Health Monitoring"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Monitoring"])$p.value
+  }else if(dt_test_fc[i, type] == "Health Resources"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Resources"])$p.value
+  }else if(dt_test_fc[i, type] == "Health Testing"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Testing"])$p.value
+  }else if(dt_test_fc[i, type] == "Hygiene"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Hygiene"])$p.value
+  }else if(dt_test_fc[i, type] == "Internal Border Restrictions"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Internal Border Restrictions"])$p.value
+  }else if(dt_test_fc[i, type] == "Lockdown"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Lockdown"])$p.value
+  }else if(dt_test_fc[i, type] == "New Task Force, Bureau or Administrative Configuration"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "New Task Force, Bureau or Administrative Configuration"])$p.value
+  }else if(dt_test_fc[i, type] == "Other Policy Not Listed Above"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Other Policy Not Listed Above"])$p.value
+  }else if(dt_test_fc[i, type] == "Public Awareness Measures"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Public Awareness Measures"])$p.value
+  }else if(dt_test_fc[i, type] == "Quarantine"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Quarantine"])$p.value
+  }else if(dt_test_fc[i, type] == "Restriction and Regulation of Businesses"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restriction and Regulation of Businesses"])$p.value
+  }else if(dt_test_fc[i, type] == "Restriction and Regulation of Government Services"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restriction and Regulation of Government Services"])$p.value
+  }else if(dt_test_fc[i, type] == "Restrictions of Mass Gatherings"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restrictions of Mass Gatherings"])$p.value
+  }else if(dt_test_fc[i, type] == "Social Distancing"){
+    dt_test_fc$p_value[i] <- wilcox.test(diff_1_policy_days ~ populist, 
+                                         data = dt_testing[type == "Social Distancing"])$p.value
+  }
+}
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Quarantine"])
+table_2 <- gt(dt_test_fc) %>% tab_header(
+  title = "P-Values for Averages between Populists and Non Populists",
+  subtitle = "Average number of days between policy start and first confirmed case"
+)
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Restrictions of Mass Gatherings"])
+dt_test_35per100k <- dt_days[, list(type, p_avg_35, np_avg_35)]
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Social Distancing"])
+dt_test_35per100k$p_value <- NA
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Declaration of Emergency"])
+for(i in 1:nrow(dt_test_35per100k)){
+  if(dt_test_35per100k[i, type] == "Anti-Disinformation Measures"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Anti-Disinformation Measures"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Closure and Regulation of Schools"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Closure and Regulation of Schools"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Curfew"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Curfew"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Declaration of Emergency"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Declaration of Emergency"])$p.value
+  }else if(dt_test_35per100k[i, type] == "External Border Restrictions"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "External Border Restrictions"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Health Monitoring"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Monitoring"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Health Resources"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Resources"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Health Testing"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Health Testing"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Hygiene"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Hygiene"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Internal Border Restrictions"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Internal Border Restrictions"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Lockdown"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Lockdown"])$p.value
+  }else if(dt_test_35per100k[i, type] == "New Task Force, Bureau or Administrative Configuration"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "New Task Force, Bureau or Administrative Configuration"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Other Policy Not Listed Above"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Other Policy Not Listed Above"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Public Awareness Measures"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Public Awareness Measures"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Quarantine"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Quarantine"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Restriction and Regulation of Businesses"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restriction and Regulation of Businesses"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Restriction and Regulation of Government Services"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restriction and Regulation of Government Services"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Restrictions of Mass Gatherings"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Restrictions of Mass Gatherings"])$p.value
+  }else if(dt_test_35per100k[i, type] == "Social Distancing"){
+    dt_test_35per100k$p_value[i] <- wilcox.test(diff_35per100k_policy_days ~ populist, 
+                                         data = dt_testing[type == "Social Distancing"])$p.value
+  }
+}
 
-wilcox.test(diff_1_policy_days ~ populist, data = dt_testing[type == "Restriction and Regulation of Businesses"])
-
+table_3 <- gt(dt_test_35per100k) %>% tab_header(
+  title = "P-Values for Averages between Populists and Non Populists",
+  subtitle = "Average number of days between policy start and first date of 35 cases per 100,000 inhabitants"
+)
