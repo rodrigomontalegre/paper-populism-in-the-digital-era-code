@@ -7,7 +7,6 @@
 
 library(data.table)
 library(ggplot2)
-library(writexl)
 library(curl)
 library(tidyr)
 library(gt)
@@ -643,5 +642,4 @@ for(i in 1:nrow(dt_test_35per100k)){
 
 table_3 <- gt(dt_test_35per100k) %>% tab_header(
   title = "P-Values for Averages between Populists and Non Populists",
-  subtitle = "Average number of days between policy start and first date of 35 cases per 100,000 inhabitants"
-)
+  subtitle = "Average number of days between policy start and first date of 35 cases per 100,000 inhabitants")
